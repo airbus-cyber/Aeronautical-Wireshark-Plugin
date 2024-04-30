@@ -26,7 +26,7 @@ This program uses the following software to run:
 | Software | Version | Copyright | License |
 |-|-|-|-|
 | Lua Bit Operations Module (Lua BitOp) | 1.0.2^ | 2008-2012 Mike Pall | MIT |
-| Wireshark | 4.2.3^ | 1998-2023 Gerald Combs and contributors | GPL-2.0-or-later |
+| Wireshark | 4.2.4^ | 1998-2023 Gerald Combs and contributors | GPL-2.0-or-later |
 
 See repositories of third-party softwares for more information about their
 dependencies.
@@ -62,7 +62,7 @@ Protocol name: `a429` for Arinc429 and `discrete` for discrete.
 For `ubuntu`:
 
 ~~~
-unzip `Wireshark_plugin-linux.zip` -d /usr
+unzip `Wireshark_plugin-ubuntu.zip` -d /usr
 ~~~
 
 The `a429` and `discrete` dissector will then be automatically loaded when starting wireshark, for all users, with the mapping active. `user_dlts` file in `/usr/share/wireshark` might be overwritten if you have your own one.
