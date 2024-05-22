@@ -26,7 +26,7 @@ This program uses the following software to run:
 | Software | Version | Copyright | License |
 |-|-|-|-|
 | Lua Bit Operations Module (Lua BitOp) | 1.0.2^ | 2008-2012 Mike Pall | MIT |
-| Wireshark | 4.2.4^ | 1998-2023 Gerald Combs and contributors | GPL-2.0-or-later |
+| Wireshark | 4.2.5^ | 1998-2023 Gerald Combs and contributors | GPL-2.0-or-later |
 
 See repositories of third-party softwares for more information about their
 dependencies.
@@ -46,30 +46,43 @@ Protocol name: `a429` for Arinc429 and `discrete` for discrete.
 * Lua module `bitop` for Arinc429 support (provided as bit.dll in the windows build)
   * Installation on `ubuntu`:
   ~~~
-  $ sudo apt-get install lua-bitop
+  sudo apt-get install lua-bitop
   ~~~
   * Installation with `luarocks`:
   ~~~
-  $ luarocks install luabitop
+  luarocks install luabitop
   ~~~
 
 ## Installing plugin
 
 ### From system plugins directory
 
-#### On linux
+The `a429` and `discrete` dissector will then be automatically loaded when starting wireshark, for all users, with the mapping active. `user_dlts` file in `/usr/share/wireshark` might be overwritten if you have your own one.
 
-For `ubuntu`:
+The extraction of the plugin in the system folders will most likely require root or admin rights.
+
+#### On ubuntu (and other debian derivatives)
 
 ~~~
 unzip `Wireshark_plugin-ubuntu.zip` -d /usr
 ~~~
 
-The `a429` and `discrete` dissector will then be automatically loaded when starting wireshark, for all users, with the mapping active. `user_dlts` file in `/usr/share/wireshark` might be overwritten if you have your own one.
+#### On linux with standard HFS in /usr with `lib` and `share` directories (archlinux, alpine)
 
-For non-standard wireshark installation you can use the user plugins folder.
+~~~
+unzip `Wireshark_plugin-standard.zip` -d /usr
+~~~
+
+#### RedHat derivatives (RHEL, Almalinux, CentOS, Fedora, AmazonLinux)
+
+Most of RHEL derivatives provides Wireshark without Lua. In this case re-compiling Wireshark with Lua support might be needed, as well as Lua 5.2 and LuaBitOp library (Fedora does provide wireshark with Lua support, and LuaBitOp automatically installed). If installed this way, wireshark configuration is often placed in `/usr/local`, so extracting it there instead of `/usr` should be done.
+
+~~~
+unzip `Wireshark_plugin-centos.zip` -d /usr
+~~~
 
 #### On Windows, with wireshark installed in its standard path:
+
 Unzip `Wireshark_plugin-windows.zip` dissector to directory:
 
 ~~~
@@ -81,6 +94,14 @@ The **-Force** option will update previously installed plugins, but will also ov
 The `a429` and `discrete` dissector will then be automatically loaded when starting wireshark, for all users, with the mapping active. `user_dlts` file in `/${ENV:PROGRAMFILES}\Wireshark` might be overwritten if you have your own one.
 
 If wireshark is not installed in the standard path, extract the plugin in the Wireshark folder (user_dlts and bit.dll in this folder - alongside Wireshark.exe - and all other files in the `plugins` subfolder)
+
+#### On MacOS, with wireshark recompiled with Lua support:
+
+`brew` version does not come with lua, and if you compile from source it would be installed in `/usr/local`:
+
+~~~
+unzip `Wireshark_plugin-macos.zip` -d /usr/local
+~~~
 
 ## Filtering capabilities
 
