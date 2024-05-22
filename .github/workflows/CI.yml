@@ -20,41 +20,85 @@ name: CI
 on:
   push:
 
+env:
+  # Variables to update in case of new versions
+  LUABITOP_VERSION: "1.0.2"
+  WIRESHARK_VERSION: "4.2.5"
+  LUA_VERSION: "5.2.4"
+  WIRESHARK_BUILD_OPTS: "-DBUILD_logray=OFF -DBUILD_tfshark=OFF -DBUILD_rawshark=OFF -DBUILD_dumpcap=OFF -DBUILD_text2pcap=OFF -DBUILD_mergecap=OFF -DBUILD_reordercap=OFF -DBUILD_editcap=OFF -DBUILD_capinfos=OFF -DBUILD_captype=OFF -DBUILD_randpkt=OFF -DBUILD_dftest=OFF -DBUILD_corbaidl2wrs=OFF -DBUILD_dcerpcidl2wrs=OFF -DBUILD_xxx2deb=OFF -DBUILD_androiddump=OFF -DBUILD_sshdump=OFF -DBUILD_ciscodump=OFF -DBUILD_dpauxmon=OFF -DBUILD_randpktdump=OFF -DBUILD_wifidump=OFF -DBUILD_etwdump=OFF -DBUILD_sdjournal=OFF -DBUILD_udpdump=OFF -DBUILD_falcodump=OFF -DBUILD_sharkd=OFF -DBUILD_mmdbresolve=OFF -DBUILD_fuzzshark=OFF -DENABLE_PCAP=OFF -DENABLE_AIRPCAP=OFF -DENABLE_ZLIB=OFF -DENABLE_MINIZIP=OFF -DENABLE_LZ4=OFF -DENABLE_BROTLI=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_NGHTTP2=OFF -DENABLE_NGHTTP3=OFF -DENABLE_LUA=ON -DENABLE_SMI=OFF -DENABLE_GNUTLS=OFF -DENABLE_KERBEROS=OFF -DENABLE_SBC=OFF -DENABLE_SPANDSP=OFF -DENABLE_BCG729=OFF -DENABLE_AMRNB=OFF -DENABLE_ILBC=OFF -DENABLE_LIBXML2=OFF -DENABLE_OPUS=OFF -DENABLE_SINSP=OFF"
+
 jobs:
 
-  # LuaBitOp DLL Compilation
-  luabitop_windows_build:
-    runs-on: windows-latest
+  # Dependency download for all builds
+  dependency_download:
+    runs-on: ubuntu-latest
     env:
-      # Variables to update in case of new versions
-      LUABITOP_VERSION: "1.0.2"
-      WIRESHARK_VERSION: "4.2.4"
-      LUA_VERSION: "5.2.4"
-
+      LUA_URL: https://www.lua.org/ftp
+      LUA_BITOP_URL: http://bitop.luajit.org/download
+      WIRESHARK_URL: https://2.na.dl.wireshark.org
     steps:
       # Get all sources
-      - name: Get LuaBitOp
-        run: Invoke-WebRequest -Uri http://bitop.luajit.org/download/LuaBitOp-${env:LUABITOP_VERSION}.zip -OutFile dll.zip
-      - name: Get Wireshark
-        run: Invoke-WebRequest -Uri  https://2.na.dl.wireshark.org/win64/Wireshark-${env:WIRESHARK_VERSION}-x64.exe -OutFile wireshark.exe
-      - name: Get Lua
-        run: Invoke-WebRequest -Uri  https://www.lua.org/ftp/lua-${env:LUA_VERSION}.tar.gz -OutFile lua.tar.gz
+      - name: Get Wireshark sources
+        run: wget ${WIRESHARK_URL}/src/wireshark-${WIRESHARK_VERSION}.tar.xz -O wireshark.tar.xz
+      - name: Get Wireshark Windows installer
+        run: wget ${WIRESHARK_URL}/win64/Wireshark-${WIRESHARK_VERSION}-x64.exe -O wireshark.exe
+      - name: Get Lua sources
+        run: wget ${LUA_URL}/lua-${LUA_VERSION}.tar.gz -O lua.tar.gz
+      - name: Get LuaBitOp sources
+        run: wget ${LUA_BITOP_URL}/LuaBitOp-${LUABITOP_VERSION}.zip -O bitop.zip
 
-      # Store Wireshark as artifact for future usage
-      - name: Archive wireshark.exe as artifact
+      # Store Sources as artifacts for future stages
+      - name: Archive Wireshark sources as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Wireshark
+          name: Wireshark-Sources
+          path: wireshark.tar.xz
+          if-no-files-found: error
+      - name: Archive Winreshark Windows installer as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Wireshark-Windows-Installer
           path: wireshark.exe
           if-no-files-found: error
+      - name: Archive Lua sources as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lua-Sources
+          path: lua.tar.gz
+          if-no-files-found: error
+      - name: Archive LuaBitOp sources as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LuaBitOp-Sources
+          path: bitop.zip
+          if-no-files-found: error
+
+  # Windows build
+  luabitop_windows_build:
+    runs-on: windows-latest
+    needs: dependency_download
+    steps:
+      # Get all sources
+      - name: Download LuaBitOp sources
+        uses: actions/download-artifact@v4
+        with:
+          name: LuaBitOp-Sources
+      - name: Download Wireshark installer
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-Windows-Installer
+      - name: Download Lua sources
+        uses: actions/download-artifact@v4
+        with:
+          name: Lua-Sources
 
       # Extract / rename folders and delete downloads
       - name: Unzip DLL source code
-        run: tar -xf dll.zip
+        run: tar -xf bitop.zip
       - name: Normalize DLL source code folder
         run: mv LuaBitOp* dll
       - name: Delete DLL source code archive
-        run: rm dll.zip
+        run: rm bitop.zip
       - name: Unzip Lua source code
         run: tar -xf lua.tar.gz
       - name: Normalize Lua source code folder
@@ -77,83 +121,11 @@ jobs:
         run: mv dll/bit.dll bit.dll
 
       # Store LuaBitOp DLL as artifact for future usage
-      - name: Archive DLL as artifact
+      - name: Archive LuaBitOp DLL as artifact
         uses: actions/upload-artifact@v4
         with:
           name: LuaBitOp-DLL
           path: bit.dll
-          if-no-files-found: error
-
-  package_ubuntu_plugin:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Get Plugin
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: .
-      - name: Create directory structure
-        run: mkdir -p lib/x86_64-linux-gnu/wireshark/plugins share/wireshark
-      - name: Move plugin files
-        run: mv cyber_*.lua LICENSE README.md COPYING lib/x86_64-linux-gnu/wireshark/plugins
-      - name: Move user_dlts file
-        run: mv user_dlts share/wireshark
-      - name: Package plugin
-        run: zip -r Wireshark_plugin.zip share lib
-
-      # Store Wireshark plugin as artifact for future usage
-      - name: Archive plugin as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Wireshark-plugin-ubuntu
-          path: Wireshark_plugin.zip
-          if-no-files-found: error
-
-  package_alpine_plugin:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Get Plugin
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: .
-      - name: Create directory structure
-        run: mkdir -p lib/wireshark/plugins share/wireshark
-      - name: Move plugin files
-        run: mv cyber_*.lua LICENSE README.md COPYING lib/wireshark/plugins
-      - name: Move user_dlts file
-        run: mv user_dlts share/wireshark
-      - name: Package plugin
-        run: zip -r Wireshark_plugin.zip share lib
-
-      # Store Wireshark plugin as artifact for future usage
-      - name: Archive plugin as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Wireshark-plugin-alpine
-          path: Wireshark_plugin.zip
-          if-no-files-found: error
-
-  package_centos_plugin:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Get Plugin
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: .
-      - name: Create directory structure
-        run: mkdir -p lib64/wireshark/plugins share/wireshark
-      - name: Move plugin files
-        run: mv cyber_*.lua LICENSE README.md COPYING lib64/wireshark/plugins
-      - name: Move user_dlts file
-        run: mv user_dlts share/wireshark
-      - name: Package plugin
-        run: zip -r Wireshark_plugin.zip share lib64
-
-      # Store Wireshark plugin as artifact for future usage
-      - name: Archive plugin as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Wireshark-plugin-centos
-          path: Wireshark_plugin.zip
           if-no-files-found: error
 
   package_windows_plugin:
@@ -182,6 +154,114 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Wireshark-plugin-windows
+          path: Wireshark_plugin.zip
+          if-no-files-found: error
+
+  test_a429_windows:
+    runs-on: windows-latest
+    needs: package_windows_plugin
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download Wireshark plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-windows
+      - name: Download Wireshark
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-Windows-Installer
+      - name: Install Wireshark
+        run: |
+          .\wireshark.exe /S
+          Start-Sleep -Seconds 30
+      - name: Test TShark availability
+        run: '& "${env:PROGRAMFILES}\Wireshark\tshark.exe" --version'
+      - name: Install plugin
+        run: Expand-Archive Wireshark_plugin.zip ${ENV:PROGRAMFILES} -Force
+      - name: Run TShark on ARINC429 traffic
+        run: '& "${env:PROGRAMFILES}\Wireshark\tshark.exe" -e A429.LABEL -e A429.WORD -e A429.SDI -e A429.SSM -e A429.DATA -e A429.PARITY -E header=y -T fields -r pcapng_files/arinc429_broadcast.pcapng | tee a429_broadcast.output'
+      - name: Run diff
+        run: fc.exe a429_broadcast.output test/a429_broadcast.output
+
+  test_discrete_windows:
+    runs-on: windows-latest
+    needs: package_windows_plugin
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download Wireshark plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-windows
+      - name: Download Wireshark
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-Windows-Installer
+      - name: Install Wireshark
+        run: |
+          .\wireshark.exe /S
+          Start-Sleep -Seconds 30
+      - name: Test TShark availability
+        run: '& "${env:PROGRAMFILES}\Wireshark\tshark.exe" --version'
+      - name: Install plugin
+        run: Expand-Archive Wireshark_plugin.zip ${ENV:PROGRAMFILES} -Force
+      - name: Run TShark on discrete traffic
+        run: '& "${env:PROGRAMFILES}\Wireshark\tshark.exe" -e DISCRETE.VALUE -E header=y -T fields -r pcapng_files/discrete.pcapng | tee discrete.output'
+      - name: Run diff
+        run: fc.exe discrete.output test/discrete.output
+
+  release_windows_plugin:
+    runs-on: ubuntu-latest
+    needs: [test_a429_windows, test_discrete_windows]
+    permissions:
+      contents: write
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    steps:
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-windows
+      - name: Rename archive
+        run: mv Wireshark_plugin.zip Wireshark_plugin-windows-${{ github.ref_name }}.zip
+      - name: Release Windows plugin
+        uses: softprops/action-gh-release@v1
+        with:
+          files: Wireshark_plugin-windows-${{ github.ref_name }}.zip
+          fail_on_unmatched_files: true
+
+  # Ubuntu and debian derivatives build
+  package_ubuntu_plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Plugin
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .
+      - name: Create directory structure
+        run: mkdir -p lib/x86_64-linux-gnu/wireshark/plugins share/wireshark
+      - name: Move plugin files
+        run: mv cyber_*.lua LICENSE README.md COPYING lib/x86_64-linux-gnu/wireshark/plugins
+      - name: Move user_dlts file
+        run: mv user_dlts share/wireshark
+      - name: Package plugin
+        run: zip -r Wireshark_plugin.zip share lib
+
+      # Store Wireshark plugin as artifact for future usage
+      - name: Archive plugin as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Wireshark-plugin-ubuntu
           path: Wireshark_plugin.zip
           if-no-files-found: error
 
@@ -239,9 +319,9 @@ jobs:
       - name: Run diff
         run: diff discrete.output test/discrete.output
 
-  test_a429_windows:
-    runs-on: windows-latest
-    needs: package_windows_plugin
+  test_a429_debian:
+    runs-on: ubuntu-latest
+    needs: package_ubuntu_plugin
     steps:
       - name: Get test files
         uses: actions/checkout@v4
@@ -250,30 +330,24 @@ jobs:
             test
             pcapng_files
           sparse-checkout-cone-mode: false
-      - name: Download Wireshark plugin
+      - name: Download plugin
         uses: actions/download-artifact@v4
         with:
-          name: Wireshark-plugin-windows
-      - name: Download Wireshark
-        uses: actions/download-artifact@v4
-        with:
-          name: Wireshark
-      - name: Install Wireshark
-        run: |
-          .\wireshark.exe /S
-          Start-Sleep -Seconds 30
-      - name: Test TShark availability
-        run: '& "${env:PROGRAMFILES}\Wireshark\tshark.exe" --version'
-      - name: Install plugin
-        run: Expand-Archive Wireshark_plugin.zip ${ENV:PROGRAMFILES} -Force
+          name: Wireshark-plugin-ubuntu
       - name: Run TShark on ARINC429 traffic
-        run: '& "${env:PROGRAMFILES}\Wireshark\tshark.exe" -e A429.LABEL -e A429.WORD -e A429.SDI -e A429.SSM -e A429.DATA -e A429.PARITY -E header=y -T fields -r pcapng_files/arinc429_broadcast.pcapng | tee a429_broadcast.output'
+        run: >
+          docker run -v .:/test debian sh -c "
+            apt-get update &&
+            apt-get install -y tshark lua-bitop unzip &&
+            unzip /test/Wireshark_plugin.zip -d /usr &&
+            tshark -e A429.LABEL -e A429.WORD -e A429.SDI -e A429.SSM -e A429.DATA -e A429.PARITY -E header=y -T fields -r /test/pcapng_files/arinc429_broadcast.pcapng | tee /test/a429_broadcast.output
+            "
       - name: Run diff
-        run: fc.exe a429_broadcast.output test/a429_broadcast.output
+        run: diff a429_broadcast.output test/a429_broadcast.output
 
-  test_discrete_windows:
-    runs-on: windows-latest
-    needs: package_windows_plugin
+  test_discrete_debian:
+    runs-on: ubuntu-latest
+    needs: package_ubuntu_plugin
     steps:
       - name: Get test files
         uses: actions/checkout@v4
@@ -282,30 +356,24 @@ jobs:
             test
             pcapng_files
           sparse-checkout-cone-mode: false
-      - name: Download Wireshark plugin
+      - name: Download plugin
         uses: actions/download-artifact@v4
         with:
-          name: Wireshark-plugin-windows
-      - name: Download Wireshark
-        uses: actions/download-artifact@v4
-        with:
-          name: Wireshark
-      - name: Install Wireshark
-        run: |
-          .\wireshark.exe /S
-          Start-Sleep -Seconds 30
-      - name: Test TShark availability
-        run: '& "${env:PROGRAMFILES}\Wireshark\tshark.exe" --version'
-      - name: Install plugin
-        run: Expand-Archive Wireshark_plugin.zip ${ENV:PROGRAMFILES} -Force
-      - name: Run TShark on discrete traffic
-        run: '& "${env:PROGRAMFILES}\Wireshark\tshark.exe" -e DISCRETE.VALUE -E header=y -T fields -r pcapng_files/discrete.pcapng | tee discrete.output'
+          name: Wireshark-plugin-ubuntu
+      - name: Run TShark on ARINC429 traffic
+        run: >
+          docker run -v .:/test debian sh -c "
+          apt-get update &&
+          apt-get install -y tshark unzip &&
+          unzip /test/Wireshark_plugin.zip -d /usr &&
+          tshark -e DISCRETE.VALUE -E header=y -T fields -r /test/pcapng_files/discrete.pcapng | tee /test/discrete.output
+          "
       - name: Run diff
-        run: fc.exe discrete.output test/discrete.output
+        run: diff discrete.output test/discrete.output
 
   release_ubuntu_plugin:
     runs-on: ubuntu-latest
-    needs: [test_a429_ubuntu, test_discrete_ubuntu]
+    needs: [test_a429_ubuntu, test_discrete_ubuntu, test_a429_debian, test_discrete_debian]
     permissions:
       contents: write
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
@@ -322,9 +390,134 @@ jobs:
           files: Wireshark_plugin-ubuntu-${{ github.ref_name }}.zip
           fail_on_unmatched_files: true
 
-  release_alpine_plugin:
+  # Standard build (alpine, archlinux)
+  package_standard_plugin:
     runs-on: ubuntu-latest
-    needs: [package_alpine_plugin]
+    steps:
+      - name: Get Plugin
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .
+      - name: Create directory structure
+        run: mkdir -p lib/wireshark/plugins share/wireshark
+      - name: Move plugin files
+        run: mv cyber_*.lua LICENSE README.md COPYING lib/wireshark/plugins
+      - name: Move user_dlts file
+        run: mv user_dlts share/wireshark
+      - name: Package plugin
+        run: zip -r Wireshark_plugin.zip share lib
+
+      # Store Wireshark plugin as artifact for future usage
+      - name: Archive plugin as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Wireshark-plugin-standard
+          path: Wireshark_plugin.zip
+          if-no-files-found: error
+
+  test_a429_alpine:
+    runs-on: ubuntu-latest
+    needs: package_standard_plugin
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-standard
+      - name: Run TShark on ARINC429 traffic
+        run: >
+          docker run -v .:/test alpine sh -c "
+            apk add tshark lua5.2-bitop &&
+            unzip /test/Wireshark_plugin.zip -d /usr &&
+            tshark -e A429.LABEL -e A429.WORD -e A429.SDI -e A429.SSM -e A429.DATA -e A429.PARITY -E header=y -T fields -r /test/pcapng_files/arinc429_broadcast.pcapng | tee /test/a429_broadcast.output
+            "
+      - name: Run diff
+        run: diff a429_broadcast.output test/a429_broadcast.output
+
+  test_discrete_alpine:
+    runs-on: ubuntu-latest
+    needs: package_standard_plugin
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-standard
+      - name: Run TShark on ARINC429 traffic
+        run: >
+          docker run -v .:/test alpine sh -c "
+            apk add tshark &&
+            unzip /test/Wireshark_plugin.zip -d /usr &&
+            tshark -e DISCRETE.VALUE -E header=y -T fields -r /test/pcapng_files/discrete.pcapng | tee /test/discrete.output
+            "
+      - name: Run diff
+        run: diff discrete.output test/discrete.output
+
+  test_a429_archlinux:
+    runs-on: ubuntu-latest
+    needs: package_standard_plugin
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-standard
+      - name: Run TShark on ARINC429 traffic
+        run: >
+          docker run -v .:/test archlinux sh -c "
+            pacman -Syu --noconfirm unzip wireshark-cli lua52-bitop diffutils &&
+            unzip /test/Wireshark_plugin.zip -d /usr &&
+            tshark -e A429.LABEL -e A429.WORD -e A429.SDI -e A429.SSM -e A429.DATA -e A429.PARITY -E header=y -T fields -r /test/pcapng_files/arinc429_broadcast.pcapng | tee /test/a429_broadcast.output
+            "
+      - name: Run diff
+        run: diff a429_broadcast.output test/a429_broadcast.output
+
+  test_discrete_archlinux:
+    runs-on: ubuntu-latest
+    needs: package_standard_plugin
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-standard
+      - name: Run TShark on ARINC429 traffic
+        run: >
+          docker run -v .:/test archlinux sh -c "
+            pacman -Syu --noconfirm unzip wireshark-cli diffutils &&
+            unzip /test/Wireshark_plugin.zip -d /usr &&
+            tshark -e DISCRETE.VALUE -E header=y -T fields -r /test/pcapng_files/discrete.pcapng | tee /test/discrete.output
+            "
+      - name: Run diff
+        run: diff discrete.output test/discrete.output      
+
+  release_standard_plugin:
+    runs-on: ubuntu-latest
+    needs: [test_a429_alpine, test_discrete_alpine, test_a429_archlinux, test_discrete_archlinux]
     permissions:
       contents: write
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
@@ -332,18 +525,345 @@ jobs:
       - name: Download plugin
         uses: actions/download-artifact@v4
         with:
-          name: Wireshark-plugin-alpine
+          name: Wireshark-plugin-standard
       - name: Rename archive
-        run: mv Wireshark_plugin.zip Wireshark_plugin-alpine-${{ github.ref_name }}.zip
-      - name: Release Alpine plugin
+        run: mv Wireshark_plugin.zip Wireshark_plugin-standard-${{ github.ref_name }}.zip
+      - name: Release Standard plugin
         uses: softprops/action-gh-release@v1
         with:
-          files: Wireshark_plugin-alpine-${{ github.ref_name }}.zip
+          files: Wireshark_plugin-standard-${{ github.ref_name }}.zip
           fail_on_unmatched_files: true
+      
+  # RHEL-like build
+  package_centos_plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Plugin
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .
+      - name: Create directory structure
+        run: mkdir -p lib64/wireshark/plugins share/wireshark
+      - name: Move plugin files
+        run: mv cyber_*.lua LICENSE README.md COPYING lib64/wireshark/plugins
+      - name: Move user_dlts file
+        run: mv user_dlts share/wireshark
+      - name: Package plugin
+        run: zip -r Wireshark_plugin.zip share lib64
+
+      # Store Wireshark plugin as artifact for future usage
+      - name: Archive plugin as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Wireshark-plugin-centos
+          path: Wireshark_plugin.zip
+          if-no-files-found: error
+
+  test_a429_centos_amazonlinux:
+    runs-on: ubuntu-latest
+    needs: [package_centos_plugin, dependency_download]
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-centos
+      - name: Download LuaBitOp sources
+        uses: actions/download-artifact@v4
+        with:
+          name: LuaBitOp-Sources
+      - name: Download Lua sources
+        uses: actions/download-artifact@v4
+        with:
+          name: Lua-Sources
+      - name: Download Wireshark sources
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-Sources
+      - name: Compile and run TShark on ARINC429 traffic
+        run: >
+          docker run -v .:/test amazonlinux sh -c "
+            yum install -y xz cmake g++ glib2-devel libgcrypt-devel c-ares-devel flex patch readline-devel unzip tar gzip &&
+            tar -xvf /test/lua.tar.gz &&
+            cd lua-* &&
+            make "MYCFLAGS=-fPIC" linux install &&
+            cd .. &&
+            tar -xvf /test/wireshark.tar.xz &&
+            cd wireshark-* &&
+            cmake ${WIRESHARK_BUILD_OPTS} -DENABLE_LUA=ON -DFETCH_lua=OFF -DBUILD_wireshark=OFF -DBUILD_tshark=ON . &&
+            make tshark install &&
+            cd .. &&
+            unzip /test/Wireshark_plugin.zip -d /usr/local &&
+            unzip /test/bitop.zip &&
+            cd LuaBitOp-* &&
+            make install &&
+            cd .. &&
+            tshark -e A429.LABEL -e A429.WORD -e A429.SDI -e A429.SSM -e A429.DATA -e A429.PARITY -E header=y -T fields -r /test/pcapng_files/arinc429_broadcast.pcapng | tee /test/a429_broadcast.output
+            "
+      - name: Run diff
+        run: diff a429_broadcast.output test/a429_broadcast.output
+
+  test_discrete_centos_amazonlinux:
+    runs-on: ubuntu-latest
+    needs: [package_centos_plugin, dependency_download]
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-centos
+      - name: Download Wireshark sources
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-Sources
+      - name: Compile and run TShark on ARINC429 traffic
+        run: >
+          docker run -v .:/test amazonlinux sh -c "
+            yum install -y xz cmake g++ glib2-devel libgcrypt-devel c-ares-devel flex patch readline-devel unzip tar gzip &&
+            tar -xvf test/wireshark.tar.xz &&
+            cd wireshark-* &&
+            cmake ${WIRESHARK_BUILD_OPTS} -DENABLE_LUA=ON -DFETCH_lua=ON -DBUILD_wireshark=OFF -DBUILD_tshark=ON . &&
+            make tshark install &&
+            cd .. &&
+            unzip /test/Wireshark_plugin.zip -d /usr/local &&
+            tshark -e DISCRETE.VALUE -E header=y -T fields -r /test/pcapng_files/discrete.pcapng | tee /test/discrete.output
+            "
+      - name: Run diff
+        run: diff discrete.output test/discrete.output
+
+  test_a429_centos_stream9:
+    runs-on: ubuntu-latest
+    needs: [package_centos_plugin, dependency_download]
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-centos
+      - name: Download LuaBitOp sources
+        uses: actions/download-artifact@v4
+        with:
+          name: LuaBitOp-Sources
+      - name: Download Lua sources
+        uses: actions/download-artifact@v4
+        with:
+          name: Lua-Sources
+      - name: Download Wireshark sources
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-Sources
+      - name: Compile and run TShark on ARINC429 traffic
+        run: >
+          docker run -v .:/test quay.io/centos/centos:stream9 sh -c "
+            yum install -y xz cmake g++ glib2-devel libgcrypt-devel c-ares-devel flex patch readline-devel unzip &&
+            tar -xvf /test/lua.tar.gz &&
+            cd lua-* &&
+            make "MYCFLAGS=-fPIC" linux install &&
+            cd .. &&
+            tar -xvf /test/wireshark.tar.xz &&
+            cd wireshark-* &&
+            cmake ${WIRESHARK_BUILD_OPTS} -DENABLE_LUA=ON -DFETCH_lua=OFF -DBUILD_wireshark=OFF -DBUILD_tshark=ON . &&
+            make tshark install &&
+            cd .. &&
+            unzip /test/Wireshark_plugin.zip -d /usr/local &&
+            unzip /test/bitop.zip &&
+            cd LuaBitOp-* &&
+            make install &&
+            cd .. &&
+            tshark -e A429.LABEL -e A429.WORD -e A429.SDI -e A429.SSM -e A429.DATA -e A429.PARITY -E header=y -T fields -r /test/pcapng_files/arinc429_broadcast.pcapng | tee /test/a429_broadcast.output
+            "
+      - name: Run diff
+        run: diff a429_broadcast.output test/a429_broadcast.output
+
+  test_discrete_centos_stream9:
+    runs-on: ubuntu-latest
+    needs: [package_centos_plugin, dependency_download]
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-centos
+      - name: Download Wireshark sources
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-Sources
+      - name: Compile and run TShark on ARINC429 traffic
+        run: >
+          docker run -v .:/test quay.io/centos/centos:stream9 sh -c "
+            yum install -y xz cmake g++ glib2-devel libgcrypt-devel c-ares-devel flex patch readline-devel unzip &&
+            tar -xvf /test/wireshark.tar.xz &&
+            cd wireshark-* &&
+            cmake ${WIRESHARK_BUILD_OPTS} -DENABLE_LUA=ON -DFETCH_lua=ON -DBUILD_wireshark=OFF -DBUILD_tshark=ON . &&
+            make tshark install &&
+            cd .. &&
+            unzip /test/Wireshark_plugin.zip -d /usr/local &&
+            tshark -e DISCRETE.VALUE -E header=y -T fields -r /test/pcapng_files/discrete.pcapng | tee /test/discrete.output
+            "
+      - name: Run diff
+        run: diff discrete.output test/discrete.output
+
+  test_a429_centos_almalinux:
+    runs-on: ubuntu-latest
+    needs: [package_centos_plugin, dependency_download]
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-centos
+      - name: Download LuaBitOp sources
+        uses: actions/download-artifact@v4
+        with:
+          name: LuaBitOp-Sources
+      - name: Download Lua sources
+        uses: actions/download-artifact@v4
+        with:
+          name: Lua-Sources
+      - name: Download Wireshark sources
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-Sources
+      - name: Compile and run TShark on ARINC429 traffic
+        run: >
+          docker run -v .:/test almalinux sh -c "
+            yum install -y xz cmake g++ glib2-devel libgcrypt-devel c-ares-devel flex patch readline-devel unzip &&
+            tar -xvf /test/lua.tar.gz &&
+            cd lua-* &&
+            make "MYCFLAGS=-fPIC" linux install &&
+            cd .. &&
+            tar -xvf /test/wireshark.tar.xz &&
+            cd wireshark-* &&
+            cmake ${WIRESHARK_BUILD_OPTS} -DENABLE_LUA=ON -DFETCH_lua=OFF -DBUILD_wireshark=OFF -DBUILD_tshark=ON . &&
+            make tshark install &&
+            cd .. &&
+            unzip /test/Wireshark_plugin.zip -d /usr/local &&
+            unzip /test/bitop.zip &&
+            cd LuaBitOp-* &&
+            make install &&
+            cd .. &&
+            tshark -e A429.LABEL -e A429.WORD -e A429.SDI -e A429.SSM -e A429.DATA -e A429.PARITY -E header=y -T fields -r /test/pcapng_files/arinc429_broadcast.pcapng | tee /test/a429_broadcast.output
+            "
+      - name: Run diff
+        run: diff a429_broadcast.output test/a429_broadcast.output
+
+  test_discrete_centos_almalinux:
+    runs-on: ubuntu-latest
+    needs: [package_centos_plugin, dependency_download]
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-centos
+      - name: Download Wireshark sources
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-Sources
+      - name: Compile and run TShark on ARINC429 traffic
+        run: >
+          docker run -v .:/test almalinux sh -c "
+            yum install -y xz cmake g++ glib2-devel libgcrypt-devel c-ares-devel flex patch readline-devel unzip &&
+            tar -xvf /test/wireshark.tar.xz &&
+            cd wireshark-* &&
+            cmake ${WIRESHARK_BUILD_OPTS} -DENABLE_LUA=ON -DFETCH_lua=ON -DBUILD_wireshark=OFF -DBUILD_tshark=ON . &&
+            make tshark install &&
+            cd .. &&
+            unzip /test/Wireshark_plugin.zip -d /usr/local &&
+            tshark -e DISCRETE.VALUE -E header=y -T fields -r /test/pcapng_files/discrete.pcapng | tee /test/discrete.output
+            "
+      - name: Run diff
+        run: diff discrete.output test/discrete.output
+
+  test_a429_centos_fedora:
+    runs-on: ubuntu-latest
+    needs: package_centos_plugin
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-centos
+      - name: Run TShark on ARINC429 traffic
+        run: >
+          docker run -v .:/test fedora sh -c "
+            yum install -y wireshark-cli unzip &&
+            unzip /test/Wireshark_plugin.zip -d /usr &&
+            tshark -e A429.LABEL -e A429.WORD -e A429.SDI -e A429.SSM -e A429.DATA -e A429.PARITY -E header=y -T fields -r /test/pcapng_files/arinc429_broadcast.pcapng | tee /test/a429_broadcast.output
+            "
+      - name: Run diff
+        run: diff a429_broadcast.output test/a429_broadcast.output
+
+  test_discrete_centos_fedora:
+    runs-on: ubuntu-latest
+    needs: package_centos_plugin
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-centos
+      - name: Run TShark on ARINC429 traffic
+        run: >
+          docker run -v .:/test fedora sh -c "
+            yum install -y wireshark-cli unzip &&
+            unzip /test/Wireshark_plugin.zip -d /usr &&
+            tshark -e DISCRETE.VALUE -E header=y -T fields -r /test/pcapng_files/discrete.pcapng | tee /test/discrete.output
+            "
+      - name: Run diff
+        run: diff discrete.output test/discrete.output
 
   release_centos_plugin:
     runs-on: ubuntu-latest
-    needs: [package_centos_plugin]
+    needs: [test_a429_centos_amazonlinux, test_discrete_centos_amazonlinux, test_a429_centos_stream9, test_discrete_centos_stream9, test_a429_centos_almalinux, test_discrete_centos_almalinux, test_a429_centos_fedora, test_discrete_centos_fedora]
     permissions:
       contents: write
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
@@ -359,10 +879,99 @@ jobs:
         with:
           files: Wireshark_plugin-centos-${{ github.ref_name }}.zip
           fail_on_unmatched_files: true
-  
-  release_windows_plugin:
+
+  # MacOS build (uses standard plugin)
+  test_a429_macos:
+    runs-on: macos-latest
+    needs: [package_standard_plugin, dependency_download]
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-standard
+      - name: Download Wireshark sources
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-Sources
+      - name: Download LuaBitOp sources
+        uses: actions/download-artifact@v4
+        with:
+          name: LuaBitOp-Sources
+      - name: Download Lua sources
+        uses: actions/download-artifact@v4
+        with:
+          name: Lua-Sources
+      - name: Run tests
+        run: tar -xvf wireshark.tar.xz
+      - name: Install dependencies
+        run: ./wireshark-*/tools/macos-setup-brew.sh
+      - name: Install dependencies
+        run: tar -xvf lua.tar.gz
+      - name: Install dependencies
+        run: cd lua-* && sudo make "MYCFLAGS=-fPIC" macosx install
+      - name: unzip bitop
+        run: unzip bitop.zip
+      - name: Install bitop
+        run: cd LuaBitOp-* && sudo make macosx install
+      - name: Prepare compilation
+        run: cd wireshark-* && cmake ${WIRESHARK_BUILD_OPTS} -DENABLE_LUA=ON -DFETCH_lua=OFF -DBUILD_wireshark=OFF -DBUILD_tshark=ON .
+      - name: Compile and install
+        run: cd wireshark-* && sudo make tshark install
+      - name: Configure rpath for tshark
+        run: install_name_tool -add_rpath /usr/local/lib /usr/local/bin/tshark
+      - name: Unzip plugin
+        run: sudo unzip Wireshark_plugin.zip -d /usr/local
+      - name: Run ARINC429 test
+        run: tshark -e A429.LABEL -e A429.WORD -e A429.SDI -e A429.SSM -e A429.DATA -e A429.PARITY -E header=y -T fields -r pcapng_files/arinc429_broadcast.pcapng | tee a429_broadcast.output
+      - name: Run diff
+        run: diff a429_broadcast.output test/a429_broadcast.output
+ 
+  test_discrete_macos:
+    runs-on: macos-latest
+    needs: [package_standard_plugin, dependency_download]
+    steps:
+      - name: Get test files
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            test
+            pcapng_files
+          sparse-checkout-cone-mode: false
+      - name: Download plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-plugin-standard
+      - name: Download Wireshark sources
+        uses: actions/download-artifact@v4
+        with:
+          name: Wireshark-Sources
+      - name: Run tests
+        run: tar -xvf wireshark.tar.xz
+      - name: Install dependencies
+        run: ./wireshark-*/tools/macos-setup-brew.sh
+      - name: Prepare compilation
+        run: cd wireshark-* && cmake ${WIRESHARK_BUILD_OPTS} -DENABLE_LUA=ON -DFETCH_lua=ON -DBUILD_wireshark=OFF -DBUILD_tshark=ON .
+      - name: Compile and install
+        run: cd wireshark-* && sudo make tshark install
+      - name: Configure rpath for tshark
+        run: install_name_tool -add_rpath /usr/local/lib /usr/local/bin/tshark
+      - name: Unzip plugin
+        run: sudo unzip Wireshark_plugin.zip -d /usr/local
+      - name: Run discrete test
+        run: tshark -e DISCRETE.VALUE -E header=y -T fields -r pcapng_files/discrete.pcapng | tee discrete.output
+      - name: Run diff
+        run: diff discrete.output test/discrete.output
+
+  release_macos_plugin:
     runs-on: ubuntu-latest
-    needs: [test_a429_windows, test_discrete_windows]
+    needs: [test_a429_macos, test_discrete_macos]
     permissions:
       contents: write
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
@@ -370,11 +979,11 @@ jobs:
       - name: Download plugin
         uses: actions/download-artifact@v4
         with:
-          name: Wireshark-plugin-windows
+          name: Wireshark-plugin-standard
       - name: Rename archive
-        run: mv Wireshark_plugin.zip Wireshark_plugin-windows-${{ github.ref_name }}.zip
-      - name: Release Windows plugin
+        run: mv Wireshark_plugin.zip Wireshark_plugin-macos-${{ github.ref_name }}.zip
+      - name: Release MacOS plugin
         uses: softprops/action-gh-release@v1
         with:
-          files: Wireshark_plugin-windows-${{ github.ref_name }}.zip
+          files: Wireshark_plugin-macos-${{ github.ref_name }}.zip
           fail_on_unmatched_files: true
