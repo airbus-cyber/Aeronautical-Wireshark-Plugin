@@ -235,7 +235,7 @@ jobs:
       - name: Rename archive
         run: mv Wireshark_plugin.zip Wireshark_plugin-windows-${{ github.ref_name }}.zip
       - name: Release Windows plugin
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: Wireshark_plugin-windows-${{ github.ref_name }}.zip
           fail_on_unmatched_files: true
@@ -385,7 +385,7 @@ jobs:
       - name: Rename archive
         run: mv Wireshark_plugin.zip Wireshark_plugin-ubuntu-${{ github.ref_name }}.zip
       - name: Release Ubuntu plugin
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: Wireshark_plugin-ubuntu-${{ github.ref_name }}.zip
           fail_on_unmatched_files: true
@@ -529,7 +529,7 @@ jobs:
       - name: Rename archive
         run: mv Wireshark_plugin.zip Wireshark_plugin-standard-${{ github.ref_name }}.zip
       - name: Release Standard plugin
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: Wireshark_plugin-standard-${{ github.ref_name }}.zip
           fail_on_unmatched_files: true
@@ -875,7 +875,7 @@ jobs:
       - name: Rename archive
         run: mv Wireshark_plugin.zip Wireshark_plugin-centos-${{ github.ref_name }}.zip
       - name: Release CentOS plugin
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: Wireshark_plugin-centos-${{ github.ref_name }}.zip
           fail_on_unmatched_files: true
@@ -983,7 +983,7 @@ jobs:
       - name: Rename archive
         run: mv Wireshark_plugin.zip Wireshark_plugin-macos-${{ github.ref_name }}.zip
       - name: Release MacOS plugin
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: Wireshark_plugin-macos-${{ github.ref_name }}.zip
           fail_on_unmatched_files: true
