@@ -929,7 +929,7 @@ jobs:
       - name: Install lua-bitop (with macports)
         run: sudo port install lua54-luabitop
       - name: bit.so search
-        run: sudo find / -name bit.so
+        run: sudo ln -s /opt/local/lib/lua/5.4/bit.so /Applications/Wireshark.app/bit.so
       - name: Unzip plugin
         run: sudo unzip Wireshark_plugin.zip -d /Applications/Wireshark.app/Contents/
       - name: Run ARINC429 test
