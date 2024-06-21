@@ -908,7 +908,8 @@ jobs:
 
   test_a429_macos:
     runs-on: macos-latest
-    needs: [package_standard_plugin, dependency_download]
+    needs: [package_macos_plugin]
+    # needs: [package_macos_plugin, dependency_download]
     steps:
       - name: Get test files
         uses: actions/checkout@v4
@@ -920,39 +921,19 @@ jobs:
       - name: Download plugin
         uses: actions/download-artifact@v4
         with:
-          name: Wireshark-plugin-standard
-      - name: Download Wireshark sources
-        uses: actions/download-artifact@v4
-        with:
-          name: Wireshark-Sources
-      - name: Download LuaBitOp sources
-        uses: actions/download-artifact@v4
-        with:
-          name: LuaBitOp-Sources
-      - name: Download Lua sources
-        uses: actions/download-artifact@v4
-        with:
-          name: Lua-Sources
-      - name: Run tests
-        run: tar -xvf wireshark.tar.xz
-      - name: Install dependencies
-        run: ./wireshark-*/tools/macos-setup-brew.sh
-      - name: Install dependencies
-        run: tar -xvf lua.tar.gz
-      - name: Install dependencies
-        run: cd lua-* && sudo make "MYCFLAGS=-fPIC" macosx install
-      - name: unzip bitop
-        run: unzip bitop.zip
-      - name: Install bitop
-        run: cd LuaBitOp-* && sudo make macosx install
-      - name: Prepare compilation
-        run: cd wireshark-* && cmake ${WIRESHARK_BUILD_OPTS} -DENABLE_LUA=ON -DFETCH_lua=OFF -DBUILD_wireshark=OFF -DBUILD_tshark=ON .
-      - name: Compile and install
-        run: cd wireshark-* && sudo make tshark install
-      - name: Configure rpath for tshark
-        run: install_name_tool -add_rpath /usr/local/lib /usr/local/bin/tshark
+          name: Wireshark-plugin-macos
+      # - name: Download LuaBitOp sources
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: LuaBitOp-Sources
+      # - name: unzip bitop
+      #   run: unzip bitop.zip
+      # - name: Install bitop
+      #   run: cd LuaBitOp-* && sudo make macosx install
+      - name: Intall wireshark
+        run: brew install --cask wireshark
       - name: Unzip plugin
-        run: sudo unzip Wireshark_plugin.zip -d /usr/local
+        run: sudo unzip Wireshark_plugin.zip -d /Applications/Wireshark.app/Contents/
       - name: Run ARINC429 test
         run: tshark -e A429.LABEL -e A429.WORD -e A429.SDI -e A429.SSM -e A429.DATA -e A429.PARITY -E header=y -T fields -r pcapng_files/arinc429_broadcast.pcapng | tee a429_broadcast.output
       - name: Run diff
@@ -975,10 +956,6 @@ jobs:
           name: Wireshark-plugin-macos
       - name: Intall wireshark
         run: brew install --cask wireshark
-      - name: ls
-        run: ls /Applications/Wireshark.app/Contents/*
-      - name: ls
-        run: ls /Applications/Wireshark.app/Contents/*/*
       - name: Unzip plugin
         run: sudo unzip Wireshark_plugin.zip -d /Applications/Wireshark.app/Contents/
       - name: Run discrete test
