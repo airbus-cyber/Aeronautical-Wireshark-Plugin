@@ -930,10 +930,12 @@ jobs:
         run: sudo port install lua54-luabitop
       # - name: bit.so search
       #   run: sudo find / -name bit.so || true
+
+      - name: List app
+        run: ls -R /Application/Wireshark.app/
       - name: bit.so search
         run: sudo ln -s  /Application/Wireshark.app/bit.so /opt/local/lib/lua/5.4/bit.so
-      - name: bit.so search
-        run: ls -R /Application/Wireshark.app/
+
       - name: Unzip plugin
         run: sudo unzip Wireshark_plugin.zip -d /Applications/Wireshark.app/Contents/
       - name: Run ARINC429 test
