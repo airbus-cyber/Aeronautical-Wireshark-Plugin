@@ -926,7 +926,7 @@ jobs:
         run: brew install --cask wireshark
       - name: Tshark version
         run: tshark --version
-      - name: Install lua-bitop (with macports)
+      - name: Install lua54-bitop (with macports)
         run: sudo port install lua-luabitop
       - name: bit.so search
         run: sudo find / -name bit.so || true
