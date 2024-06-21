@@ -932,7 +932,7 @@ jobs:
       #   run: sudo find / -name bit.so || true
 
       - name: List app
-        run: ls -R /Applications/Wireshark.app
+        run: ls -h /Applications/Wireshark.app
       - name: bit.so search
         run: sudo ln -s  /opt/local/lib/lua/5.4/bit.so /Applications/Wireshark.app/bit.so
 
