@@ -26,6 +26,8 @@ env:
   WIRESHARK_VERSION: "4.2.5"
   LUA_VERSION: "5.2.4"
   WIRESHARK_BUILD_OPTS: "-DBUILD_logray=OFF -DBUILD_tfshark=OFF -DBUILD_rawshark=OFF -DBUILD_dumpcap=OFF -DBUILD_text2pcap=OFF -DBUILD_mergecap=OFF -DBUILD_reordercap=OFF -DBUILD_editcap=OFF -DBUILD_capinfos=OFF -DBUILD_captype=OFF -DBUILD_randpkt=OFF -DBUILD_dftest=OFF -DBUILD_corbaidl2wrs=OFF -DBUILD_dcerpcidl2wrs=OFF -DBUILD_xxx2deb=OFF -DBUILD_androiddump=OFF -DBUILD_sshdump=OFF -DBUILD_ciscodump=OFF -DBUILD_dpauxmon=OFF -DBUILD_randpktdump=OFF -DBUILD_wifidump=OFF -DBUILD_etwdump=OFF -DBUILD_sdjournal=OFF -DBUILD_udpdump=OFF -DBUILD_falcodump=OFF -DBUILD_sharkd=OFF -DBUILD_mmdbresolve=OFF -DBUILD_fuzzshark=OFF -DENABLE_PCAP=OFF -DENABLE_AIRPCAP=OFF -DENABLE_ZLIB=OFF -DENABLE_MINIZIP=OFF -DENABLE_LZ4=OFF -DENABLE_BROTLI=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_NGHTTP2=OFF -DENABLE_NGHTTP3=OFF -DENABLE_LUA=ON -DENABLE_SMI=OFF -DENABLE_GNUTLS=OFF -DENABLE_KERBEROS=OFF -DENABLE_SBC=OFF -DENABLE_SPANDSP=OFF -DENABLE_BCG729=OFF -DENABLE_AMRNB=OFF -DENABLE_ILBC=OFF -DENABLE_LIBXML2=OFF -DENABLE_OPUS=OFF -DENABLE_SINSP=OFF"
+  MACPORTS_VERSION: "2.9.3"
+  MACOS_VERSION: "14-Sonoma"
 
 jobs:
 
@@ -36,6 +38,7 @@ jobs:
       LUA_URL: https://www.lua.org/ftp
       LUA_BITOP_URL: http://bitop.luajit.org/download
       WIRESHARK_URL: https://2.na.dl.wireshark.org
+      MACPORTS_URL: https://github.com/macports/macports-base/releases/download/
     steps:
       # Get all sources
       - name: Get Wireshark sources
@@ -46,6 +49,8 @@ jobs:
         run: wget ${LUA_URL}/lua-${LUA_VERSION}.tar.gz -O lua.tar.gz
       - name: Get LuaBitOp sources
         run: wget ${LUA_BITOP_URL}/LuaBitOp-${LUABITOP_VERSION}.zip -O bitop.zip
+      - name: Get MacPorts installer
+        run: wget ${MACPORTS_URL}/v${MACPORTS_VERSION}/MacPorts-${MACPORTS_VERSION}-${MACOS_VERSION}.pkg -O macports.pkg
 
       # Store Sources as artifacts for future stages
       - name: Archive Wireshark sources as artifact
@@ -71,6 +76,12 @@ jobs:
         with:
           name: LuaBitOp-Sources
           path: bitop.zip
+          if-no-files-found: error
+      - name: Archive MacPorts installer as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacPorts-Installer
+          path: macports.pkg
           if-no-files-found: error
 
   # Windows build
