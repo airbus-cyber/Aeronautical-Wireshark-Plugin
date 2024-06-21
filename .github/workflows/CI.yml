@@ -933,7 +933,7 @@ jobs:
       - name: bit.so search
         run: sudo ln -s /opt/local/lib/lua/5.4/bit.so /Application/Wireshark.app/bit.so
       - name: bit.so search
-        run: ls -R /Application/Wireshark.app/bit.so
+        run: ls -R /Application/Wireshark.app/
       - name: Unzip plugin
         run: sudo unzip Wireshark_plugin.zip -d /Applications/Wireshark.app/Contents/
       - name: Run ARINC429 test
