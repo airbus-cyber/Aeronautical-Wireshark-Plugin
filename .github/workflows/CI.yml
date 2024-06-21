@@ -950,6 +950,8 @@ jobs:
           name: Wireshark-plugin-standard
       - name: Intall wireshark
         run: brew install --cask wireshark
+      - name: ls
+        run: ls -lR /opt/homebrew
       - name: Unzip plugin
         run: sudo unzip Wireshark_plugin.zip -d /opt/homebrew
       - name: which tshark
