@@ -919,7 +919,8 @@ jobs:
 
   test_a429_macos:
     runs-on: macos-latest
-    needs: [package_macos_plugin, dependency_download]
+    # needs: [package_macos_plugin, dependency_download]
+    needs: [package_macos_plugin]
     steps:
       - name: Get test files
         uses: actions/checkout@v4
@@ -932,12 +933,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: Wireshark-plugin-macos
-      - name: Download MacPorts installer
-        uses: actions/download-artifact@v4
-        with:
-          name: MacPorts-Installer
-      - name: Install MacPorts
-        run: sudo installer -pkg macports.pkg -target /
+      - uses: melusina-org/setup-macports@v1
       - name: Where is Macport
         run: ls -R /opt/local
       - name: Show MacPorts
