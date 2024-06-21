@@ -932,16 +932,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: Wireshark-plugin-macos
-      - name: Download LuaBitOp sources
+      - name: Download MacPorts installer
         uses: actions/download-artifact@v4
         with:
-          name: LuaBitOp-Sources
-      - name: unzip bitop
-        run: unzip bitop.zip
-      - name: Install bitop
-        run: cd LuaBitOp-* && sudo make macosx install
-      - name: Intall wireshark
-        run: brew install --cask wireshark
+          name: MacPorts-Installer
+      - name: Install MacPorts
+        run: sudo installer -pkg macports.pkg -target /
+      - name: Install wireshark
+        run: sudo port install wireshark4 
+      - name: Tshark version
+        run: tshark --version
       - name: Unzip plugin
         run: sudo unzip Wireshark_plugin.zip -d /Applications/Wireshark.app/Contents/
       - name: Run ARINC429 test
