@@ -939,7 +939,7 @@ jobs:
       - name: Install MacPorts
         run: sudo installer -pkg macports.pkg -target /
       - name: Where is Macport
-        run: ls /opt/local -R
+        run: ls -R /opt/local
       - name: Show MacPorts
         run: port version
       - name: Install wireshark
