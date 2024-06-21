@@ -908,8 +908,7 @@ jobs:
 
   test_a429_macos:
     runs-on: macos-latest
-    needs: [package_macos_plugin]
-    # needs: [package_macos_plugin, dependency_download]
+    needs: [package_macos_plugin, dependency_download]
     steps:
       - name: Get test files
         uses: actions/checkout@v4
