@@ -938,6 +938,10 @@ jobs:
           name: MacPorts-Installer
       - name: Install MacPorts
         run: sudo installer -pkg macports.pkg -target /
+      - name: Where is Macport
+        run: ls /opt/local -R
+      - name: Show MacPorts
+        run: port version
       - name: Install wireshark
         run: sudo port install wireshark4 
       - name: Tshark version
