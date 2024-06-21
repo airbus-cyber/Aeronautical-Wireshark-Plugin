@@ -948,20 +948,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: Wireshark-plugin-standard
-      - name: Download Wireshark sources
-        uses: actions/download-artifact@v4
-        with:
-          name: Wireshark-Sources
-      - name: Run tests
-        run: tar -xvf wireshark.tar.xz
-      - name: Install dependencies
-        run: ./wireshark-*/tools/macos-setup-brew.sh
-      - name: Prepare compilation
-        run: cd wireshark-* && cmake ${WIRESHARK_BUILD_OPTS} -DENABLE_LUA=ON -DFETCH_lua=ON -DBUILD_wireshark=OFF -DBUILD_tshark=ON .
-      - name: Compile and install
-        run: cd wireshark-* && sudo make tshark install
-      - name: Configure rpath for tshark
-        run: install_name_tool -add_rpath /usr/local/lib /usr/local/bin/tshark
+      - name: Intall wireshark
+        run: brew install --cask wireshark
       - name: Unzip plugin
         run: sudo unzip Wireshark_plugin.zip -d /usr/local
       - name: Run discrete test
