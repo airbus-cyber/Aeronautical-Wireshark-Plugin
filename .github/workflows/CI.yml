@@ -901,7 +901,7 @@ jobs:
       - name: Archive plugin as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Wireshark-plugin-ubuntu
+          name: Wireshark-plugin-macos
           path: Wireshark_plugin.zip
           if-no-files-found: error
 
@@ -972,7 +972,7 @@ jobs:
       - name: Download plugin
         uses: actions/download-artifact@v4
         with:
-          name: Wireshark-plugin-standard
+          name: Wireshark-plugin-macos
       - name: Intall wireshark
         run: brew install --cask wireshark
       - name: ls
@@ -981,10 +981,6 @@ jobs:
         run: ls /Applications/Wireshark.app/Contents/*/*
       - name: Unzip plugin
         run: sudo unzip Wireshark_plugin.zip -d /Applications/Wireshark.app/Contents/
-      - name: which tshark
-        run: tshark --version
-      - name: which tshark
-        run: which tshark
       - name: Run discrete test
         run: tshark -e DISCRETE.VALUE -E header=y -T fields -r pcapng_files/discrete.pcapng | tee discrete.output
       - name: Run diff
