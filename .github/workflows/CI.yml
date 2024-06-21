@@ -927,7 +927,7 @@ jobs:
       - name: Tshark version
         run: tshark --version
       - name: Install lua54-bitop (with macports)
-        run: sudo port install lua-luabitop
+        run: sudo port install lua54-luabitop
       - name: bit.so search
         run: sudo find / -name bit.so || true
       - name: bit.so search
