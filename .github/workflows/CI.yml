@@ -951,7 +951,7 @@ jobs:
       - name: Intall wireshark
         run: brew install --cask wireshark
       - name: Unzip plugin
-        run: sudo unzip Wireshark_plugin.zip -d /usr/local
+        run: sudo unzip Wireshark_plugin.zip -d /opt/homebrew
       - name: which tshark
         run: tshark --version
       - name: which tshark
