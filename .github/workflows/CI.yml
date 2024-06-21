@@ -880,7 +880,32 @@ jobs:
           files: Wireshark_plugin-centos-${{ github.ref_name }}.zip
           fail_on_unmatched_files: true
 
-  # MacOS build (uses standard plugin)
+  # MacOS build
+  package_macos_plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Plugin
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .
+      - name: Create directory structure
+        run: mkdir -p PlugIns/wireshark Resources/share/wireshark
+      - name: Move plugin files
+        run: mv cyber_*.lua LICENSE README.md COPYING PlugIns/wireshark
+      - name: Move user_dlts file
+        run: mv user_dlts Resources/share/wireshark
+      - name: Package plugin
+        run: zip -r Wireshark_plugin.zip PlugIns Resources
+
+      # Store Wireshark plugin as artifact for future usage
+      - name: Archive plugin as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Wireshark-plugin-ubuntu
+          path: Wireshark_plugin.zip
+          if-no-files-found: error
+
+
   test_a429_macos:
     runs-on: macos-latest
     needs: [package_standard_plugin, dependency_download]
@@ -935,7 +960,7 @@ jobs:
  
   test_discrete_macos:
     runs-on: macos-latest
-    needs: [package_standard_plugin]
+    needs: [package_macos_plugin]
     steps:
       - name: Get test files
         uses: actions/checkout@v4
@@ -951,17 +976,11 @@ jobs:
       - name: Intall wireshark
         run: brew install --cask wireshark
       - name: ls
-        run: ls -l /usr/
-      - name: find wireshark
-        run: find / -name wireshark
-      - name: ls APPDIR
-        run: ls -l ${APPDIR}/Contents/PlugIns/wireshark
-      - name: find wireshark
-        run: find / -name wireshark
-      - name: ls INSTALLDIR
-        run: ls -l ${INSTALLDIR}INSTALLDIR/lib/wireshark/plugins
+        run: ls /Applications/Wireshark.app/Contents/*
+      - name: ls
+        run: ls /Applications/Wireshark.app/Contents/*/*
       - name: Unzip plugin
-        run: sudo unzip Wireshark_plugin.zip -d /usr/
+        run: sudo unzip Wireshark_plugin.zip -d /Applications/Wireshark.app/Contents/
       - name: which tshark
         run: tshark --version
       - name: which tshark
