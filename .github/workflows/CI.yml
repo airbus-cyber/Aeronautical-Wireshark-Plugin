@@ -951,13 +951,15 @@ jobs:
       - name: Intall wireshark
         run: brew install --cask wireshark
       - name: ls
-        run: ls -l /usr/*
+        run: ls -l /usr/
+      - name: find wireshark
+        run: find / -name wireshark
       - name: ls APPDIR
-        run: ls -l %APPDIR%/Contents/PlugIns/wireshark
+        run: ls -l ${APPDIR}/Contents/PlugIns/wireshark
       - name: find wireshark
         run: find / -name wireshark
       - name: ls INSTALLDIR
-        run: ls -l %INSTALLDIR%/lib/wireshark/plugins
+        run: ls -l ${INSTALLDIR}INSTALLDIR/lib/wireshark/plugins
       - name: Unzip plugin
         run: sudo unzip Wireshark_plugin.zip -d /usr/
       - name: which tshark
