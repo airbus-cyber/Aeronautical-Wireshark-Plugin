@@ -935,7 +935,7 @@ jobs:
  
   test_discrete_macos:
     runs-on: macos-latest
-    needs: [package_standard_plugin, dependency_download]
+    needs: [package_standard_plugin]
     steps:
       - name: Get test files
         uses: actions/checkout@v4
@@ -952,6 +952,10 @@ jobs:
         run: brew install --cask wireshark
       - name: Unzip plugin
         run: sudo unzip Wireshark_plugin.zip -d /usr/local
+      - name: which tshark
+        run: tshark --version
+      - name: which tshark
+        run: which tshark
       - name: Run discrete test
         run: tshark -e DISCRETE.VALUE -E header=y -T fields -r pcapng_files/discrete.pcapng | tee discrete.output
       - name: Run diff
