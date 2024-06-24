@@ -931,11 +931,14 @@ jobs:
       # - name: bit.so search
       #   run: sudo find / -name bit.so || true
 
-      - name: List app
-        run: ls -h /Applications/Wireshark.app
-      - name: bit.so search
-        run: sudo ln -s  /opt/local/lib/lua/5.4/bit.so /Applications/Wireshark.app/bit.so
-
+      # - name: List app
+      #   run: ls -h /Applications/Wireshark.app
+      # - name: bit.so linkage
+      #   run: sudo ln -s  /opt/local/lib/lua/5.4/bit.so /Applications/Wireshark.app/bit.so
+      - name: Which tshark
+        run: which tshark
+      - name: Configure rpath for tshark
+        run: install_name_tool -add_rpath /opt/local/lib/lua/5.4/ /usr/local/bin/tshark
       - name: Unzip plugin
         run: sudo unzip Wireshark_plugin.zip -d /Applications/Wireshark.app/Contents/
       - name: Run ARINC429 test
