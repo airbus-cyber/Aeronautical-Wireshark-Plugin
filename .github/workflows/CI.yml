@@ -938,7 +938,7 @@ jobs:
       - name: Which tshark
         run: which tshark
       - name: Configure rpath for tshark
-        run: install_name_tool -add_rpath /opt/local/lib/lua/5.4/ /usr/local/bin/tshark
+        run: install_name_tool -add_rpath /opt/local/lib/lua/5.4/ /opt/homebrew/bin/tshark
       - name: Unzip plugin
         run: sudo unzip Wireshark_plugin.zip -d /Applications/Wireshark.app/Contents/
       - name: Run ARINC429 test
