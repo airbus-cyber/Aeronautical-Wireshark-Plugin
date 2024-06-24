@@ -936,7 +936,7 @@ jobs:
       # - name: bit.so linkage
       #   run: sudo ln -s  /opt/local/lib/lua/5.4/bit.so /Applications/Wireshark.app/bit.so
       - name: Which tshark
-        run: ls /usr/local/lib
+        run: ls /opt/local/lib
       - name: Which tshark
         run: which tshark
       - name: Configure rpath for tshark
