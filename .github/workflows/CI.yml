@@ -944,7 +944,7 @@ jobs:
       - name: Unzip plugin
         run: sudo unzip Wireshark_plugin.zip -d /Applications/Wireshark.app/Contents/
       - name: Run ARINC429 test
-        run: tshark -e A429.LABEL -e A429.WORD -e A429.SDI -e A429.SSM -e A429.DATA -e A429.PARITY -E header=y -T fields -r pcapng_files/arinc429_broadcast.pcapng | tee a429_broadcast.output
+        run: export DYLD_LIBRARY_PATH=/opt/local/lib:$DYLD_LIBRARY_PATH && tshark -e A429.LABEL -e A429.WORD -e A429.SDI -e A429.SSM -e A429.DATA -e A429.PARITY -E header=y -T fields -r pcapng_files/arinc429_broadcast.pcapng | tee a429_broadcast.output
       - name: Run diff
         run: diff a429_broadcast.output test/a429_broadcast.output
  
