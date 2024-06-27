@@ -928,6 +928,7 @@ jobs:
       - name: Tshark version
         run: tshark --version
       # Install lua-bitop
+      - uses: melusina-org/setup-macports@v1
       - name: Install lua54-bitop (with macports)
         run: sudo port install lua54-luabitop
       # Unzip lua plugin
