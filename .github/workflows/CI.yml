@@ -957,9 +957,7 @@ jobs:
         with:
           name: Wireshark-plugin-macos
       - name: Intall wireshark
-        run: brew install wireshark
-      - name: Intall wireshark
-        run: tshark --version  
+        run: brew install --cask wireshark
       - name: Unzip plugin
         run: sudo unzip Wireshark_plugin.zip -d /Applications/Wireshark.app/Contents/
       - name: Run discrete test
