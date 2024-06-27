@@ -910,6 +910,7 @@ jobs:
     runs-on: macos-latest
     needs: [package_macos_plugin]
     steps:
+      # Get Dependencies
       - name: Get test files
         uses: actions/checkout@v4
         with:
@@ -921,30 +922,21 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: Wireshark-plugin-macos
-      - uses: melusina-org/setup-macports@v1
+      # Install Wireshark
       - name: Install wireshark (with brew)
         run: brew install --cask wireshark
       - name: Tshark version
         run: tshark --version
+      # Install lua-bitop
       - name: Install lua54-bitop (with macports)
         run: sudo port install lua54-luabitop
-      # - name: bit.so search
-      #   run: sudo find / -name bit.so || true
-
-      # - name: List app
-      #   run: ls -h /Applications/Wireshark.app
-      # - name: bit.so linkage
-      #   run: sudo ln -s  /opt/local/lib/lua/5.4/bit.so /Applications/Wireshark.app/bit.so
-      - name: Which tshark
-        run: ls -lhR /opt/local/lib/lua
-      - name: Which tshark
-        run: which tshark
-      - name: Configure rpath for tshark
-        run: sudo cp /opt/local/lib/lua/5.4/bit.so /opt/homebrew/bin/
+      # Unzip lua plugin
       - name: Unzip plugin
         run: sudo unzip Wireshark_plugin.zip -d /Applications/Wireshark.app/Contents/
+      # Run test
       - name: Run ARINC429 test
-        run: export DYLD_LIBRARY_PATH=/opt/local/lib:$DYLD_LIBRARY_PATH && tshark -e A429.LABEL -e A429.WORD -e A429.SDI -e A429.SSM -e A429.DATA -e A429.PARITY -E header=y -T fields -r pcapng_files/arinc429_broadcast.pcapng | tee a429_broadcast.output
+        run: DYLD_LIBRARY_PATH=/opt/local/lib:$DYLD_LIBRARY_PATH tshark -e A429.LABEL -e A429.WORD -e A429.SDI -e A429.SSM -e A429.DATA -e A429.PARITY -E header=y -T fields -r pcapng_files/arinc429_broadcast.pcapng | tee a429_broadcast.output
+      # Run diff
       - name: Run diff
         run: diff a429_broadcast.output test/a429_broadcast.output
  
