@@ -42,7 +42,7 @@ Protocol name: `a429` for Arinc429 and `discrete` for discrete.
 
 `aeronautical-wireshark-plugin` requires:
 
-* `wireshark` with `lua` support enabled
+* `wireshark` with `lua 5.2` support enabled (wireshark < 4.3)
 * Lua module `bitop` for Arinc429 support (provided as bit.dll in the windows build)
   * Installation on `ubuntu`:
   ~~~
